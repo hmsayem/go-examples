@@ -81,12 +81,10 @@ import (
 func main() {
  
     map_1 := map[int]string{
- 
         200: "Hossain",
         201: "Mahmud",
     }
     map_2 := map[int]string{
- 
         200: "Hasan",
         201: "Mahmud",
     }
@@ -94,4 +92,47 @@ func main() {
     res := reflect.DeepEqual(map_1, map_2)
     fmt.Println("Is Map 1 is equal to Map 2: ", res)
 }
+```
+
+#### Accessing individual characters of a string
+
+```go
+package main
+
+import (
+    "fmt"
+)
+
+func printBytes(s string) {
+    fmt.Printf("Bytes: ")
+    for i := 0; i < len(s); i++ {
+        fmt.Printf("%x ", s[i])
+    }
+}
+
+func printCharsByRunes(s string) {
+    fmt.Printf("Runes: ")
+    runes := []rune(s)
+    for i := 0; i < len(runes); i++ {
+        fmt.Printf("%c ", runes[i])
+    }
+}
+
+func printChars(s string) {
+    fmt.Printf("Characters: ")
+    for i := 0; i < len(s); i++ {
+    fmt.Printf("%c ", s[i])
+    }
+}
+
+func main() {
+    name := "Señor"
+    fmt.Printf("String: %s\n", name)
+    printBytes(name)
+    fmt.Printf("\n")
+    printChars(name)
+    fmt.Printf("\n")
+    printCharsByRunes(name)
+}
+
 ```
