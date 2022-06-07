@@ -136,3 +136,22 @@ func main() {
 }
 
 ```
+
+#### Mutate string
+
+```go
+package main
+
+import "fmt"
+
+func mutate(s []rune, ch rune, id int) string {
+    s[id] = ch
+    return string(s)
+}
+func main() {
+    s := "hello"
+    s = mutate([]rune(s), 'x', 0)
+    fmt.Println(s)
+}
+
+```
