@@ -24,7 +24,7 @@ outer:
 }
 ```
 
-#### Multiple expressions in Switch Case
+#### Multiple expressions in switch case
 
 ```go
 package main
@@ -46,7 +46,7 @@ func main() {
 
 ```
 
-#### Memory Optimisation with Garbage Collection
+#### Memory optimisation with garbage collection
 
 ```go
 package main
@@ -65,5 +65,33 @@ func countries() []string {
 func main() {  
     countriesNeeded := countries()
     fmt.Println(countriesNeeded)
+}
+```
+
+#### Comparing maps using reflection
+
+```go
+package main
+ 
+import (
+    "fmt"
+    "reflect"
+)
+ 
+func main() {
+ 
+    map_1 := map[int]string{
+ 
+        200: "Hossain",
+        201: "Mahmud",
+    }
+    map_2 := map[int]string{
+ 
+        200: "Hasan",
+        201: "Mahmud",
+    }
+ 
+    res := reflect.DeepEqual(map_1, map_2)
+    fmt.Println("Is Map 1 is equal to Map 2: ", res)
 }
 ```
