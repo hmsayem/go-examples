@@ -148,10 +148,50 @@ func mutate(s []rune, ch rune, id int) string {
     s[id] = ch
     return string(s)
 }
+
 func main() {
     s := "hello"
     s = mutate([]rune(s), 'x', 0)
     fmt.Println(s)
+}
+
+```
+
+#### Creating pointers using the new function
+
+```go
+package main
+
+import (
+    "fmt"
+)
+
+func main() {
+    p := new(int)
+    fmt.Printf("Value of p is %d, type of p is %T, address of p is %v\n", *p, p, p)
+    *p = 85
+    fmt.Println("New size value is", *p)
+}
+
+```
+
+#### Modify array using slice
+
+```go
+package main
+
+import (
+    "fmt"
+)
+
+func modify(sls []int) {
+    sls[0] = 90
+}
+
+func main() {
+    a := [3]int{89, 90, 91}
+    modify(a[:])
+    fmt.Println(a)
 }
 
 ```
