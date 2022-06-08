@@ -195,3 +195,7 @@ func main() {
 }
 
 ```
+
+### Reference
+
+- [golangbot.com](https://golangbot.com/learn-golang-series/)
