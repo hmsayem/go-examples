@@ -462,7 +462,7 @@ func main() {
 }
 ```
 
-#### Implementing interfaces using pointer receivers vs value receivers
+#### Implementing interfaces using pointer receivers and value receivers
 
 ```go
 package main
@@ -592,6 +592,231 @@ func main() {
     if d1 == nil {
         fmt.Printf("d1 is nil and has type %T value %v\n", d1, d1)
     }
+}
+```
+
+
+#### Example of channels
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func calcSquares(number int, squareop chan int) {  
+    sum := 0
+    for number != 0 {
+        digit := number % 10
+        sum += digit * digit
+        number /= 10
+    }
+    squareop <- sum
+}
+
+func calcCubes(number int, cubeop chan int) {  
+    sum := 0 
+    for number != 0 {
+        digit := number % 10
+        sum += digit * digit * digit
+        number /= 10
+    }
+    cubeop <- sum
+} 
+
+func main() {  
+    number := 589
+    sqrch := make(chan int)
+    cubech := make(chan int)
+    go calcSquares(number, sqrch)
+    go calcCubes(number, cubech)
+    squares, cubes := <-sqrch, <-cubech
+    fmt.Println("Final output", squares + cubes)
+}
+```
+
+#### Unidirectional channels
+
+It is possible to convert a bidirectional channel to a send only or receive only channel but not the vice versa.
+
+```go
+package main
+
+import "fmt"
+
+func sendData(sendch chan<- int) {  
+    sendch <- 10
+}
+
+func main() {  
+    chnl := make(chan int)
+    go sendData(chnl)
+    fmt.Println(<-chnl)
+}
+```
+
+#### Closing channels 
+
+Senders have the ability to close the channel to notify receivers that no more data will be sent on the channel.
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func producer(chnl chan int) {  
+    for i := 0; i < 10; i++ {
+        chnl <- i
+    }
+    close(chnl)
+}
+
+func main() {  
+    ch := make(chan int)
+    go producer(ch)
+    for {
+        v, ok := <-ch
+        if ok == false {
+            break
+        }
+        fmt.Println("Received ", v, ok)
+    }
+}
+```
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func digits(number int, dchnl chan int) {  
+    for number != 0 {
+        digit := number % 10
+        dchnl <- digit
+        number /= 10
+    }
+    close(dchnl)
+}
+func calcSquares(number int, squareop chan int) {  
+    sum := 0
+    dch := make(chan int)
+    go digits(number, dch)
+    for digit := range dch {
+        sum += digit * digit
+    }
+    squareop <- sum
+}
+
+func calcCubes(number int, cubeop chan int) {  
+    sum := 0
+    dch := make(chan int)
+    go digits(number, dch)
+    for digit := range dch {
+        sum += digit * digit * digit
+    }
+    cubeop <- sum
+}
+
+func main() {  
+    number := 589
+    sqrch := make(chan int)
+    cubech := make(chan int)
+    go calcSquares(number, sqrch)
+    go calcCubes(number, cubech)
+    squares, cubes := <-sqrch, <-cubech
+    fmt.Println("Final output", squares+cubes)
+}
+```
+
+#### Example of buffered channel
+
+```go
+package main
+
+import (  
+    "fmt"
+    "time"
+)
+
+func write(ch chan int) {  
+    for i := 0; i < 5; i++ {
+        ch <- i
+        fmt.Println("successfully wrote", i, "to ch")
+    }
+    close(ch)
+}
+func main() {  
+    ch := make(chan int, 2)
+    go write(ch)
+    time.Sleep(2 * time.Second)
+    for v := range ch {
+        fmt.Println("read value", v,"from ch")
+        time.Sleep(2 * time.Second)
+    }
+}
+```
+
+#### Closing buffered channels
+
+It's possible to read data from a already closed buffered channel. The channel will return the data that is already written to the channel and once all the data has been read, it will return the zero value of the channel.
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func main() {  
+    ch := make(chan int, 5)
+    ch <- 5
+    ch <- 6
+    close(ch)
+    n, open := <-ch 
+    fmt.Printf("Received: %d, open: %t\n", n, open)
+    n, open = <-ch 
+    fmt.Printf("Received: %d, open: %t\n", n, open)
+    n, open = <-ch 
+    fmt.Printf("Received: %d, open: %t\n", n, open)
+}
+```
+
+```go
+func main() {  
+    ch := make(chan int, 5)
+    ch <- 5
+    ch <- 6
+    close(ch)
+    for n := range ch {
+        fmt.Println("Received:", n)
+    }
+}
+```
+
+#### Length and capacity of the buffered channel
+
+The capacity of a buffered channel is the number of values that the channel can hold. The length of the buffered channel is the number of elements currently queued in it.
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func main() {  
+    ch := make(chan string, 3)
+    ch <- "naveen"
+    ch <- "paul"
+    fmt.Println("capacity is", cap(ch))
+    fmt.Println("length is", len(ch))
+    fmt.Println("read value", <-ch)
+    fmt.Println("new length is", len(ch))
 }
 ```
 
