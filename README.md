@@ -820,6 +820,84 @@ func main() {
 }
 ```
 
+#### Worker Pool Implementation
+
+```go
+package main
+
+import (
+	"fmt"
+	"math/rand"
+	"sync"
+	"time"
+)
+
+type job struct {
+	id           int
+	randomNumber int
+}
+
+type result struct {
+	job
+	sumOfDigits int
+}
+
+var jobs = make(chan job, 10)
+var results = make(chan result, 10)
+
+func SumOfDigits(num int) int {
+	sum := 0
+	for num != 0 {
+		sum += num % 10
+		num /= 10
+	}
+	return sum
+}
+
+func worker(wg *sync.WaitGroup) {
+	for job := range jobs {
+		output := result{job, SumOfDigits(job.randomNumber)}
+		results <- output
+	}
+	wg.Done()
+}
+
+func createWorkerPool(numOfWorkers int) {
+	wg := sync.WaitGroup{}
+	for i := 1; i <= numOfWorkers; i++ {
+		wg.Add(1)
+		go worker(&wg)
+	}
+
+	wg.Wait()
+	close(results)
+}
+
+func generateJobs(numOfJobs int) {
+	for i := 1; i <= numOfJobs; i++ {
+		newJob := job{i, rand.Intn(1000)}
+		jobs <- newJob
+	}
+	close(jobs)
+}
+
+func getResult(done chan bool) {
+	for result := range results {
+		fmt.Println("Job: ", result.job, "Output: ", result.sumOfDigits)
+	}
+	done <- true
+}
+func main() {
+	startTime := time.Now()
+	go generateJobs(100)
+	go createWorkerPool(5)
+	done := make(chan bool)
+	go getResult(done)
+	<-done
+	fmt.Println("Total time taken: ", time.Now().Sub(startTime).Seconds(), "seconds")
+}
+```
+
 ### Reference
 
 - [golangbot.com](https://golangbot.com/learn-golang-series/)
