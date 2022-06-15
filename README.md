@@ -368,7 +368,7 @@ func main() {
 
 Type assertion is used to extract the underlying value of the interface.
 
-i.(T) is the syntax which is used to get the underlying value of interface i whose concrete type is T.
+`i.(T)` is the syntax which is used to get the underlying value of interface i whose concrete type is T.
 
 ```go
 package main
@@ -965,6 +965,7 @@ func main() {
 
 }
 ```
+
 #### Solving the race condition using a mutex
 
 ```go
@@ -1024,6 +1025,46 @@ func main() {
 	fmt.Println("final value of x", x)
 }
 ```
+#### New() function instead of constructors
+
+If the zero value of a type is not usable, it is the job of the programmer to unexport the type to prevent access from other packages and also to provide a function named `NewT(parameters)` which initializes the type T with the required values. It is a convention in Go to name a function that creates a value of type T to `NewT(parameters)`. This will act as a constructor. If the package defines only one type, then it's a convention in Go to name this function just `New(parameters)` instead of `NewT(parameters)`.
+
+```go
+package employee
+
+import (  
+    "fmt"
+)
+
+type employee struct {  
+    firstName   string
+    lastName    string
+    totalLeaves int
+    leavesTaken int
+}
+
+func New(firstName string, lastName string, totalLeave int, leavesTaken int) employee {  
+    e := employee {firstName, lastName, totalLeave, leavesTaken}
+    return e
+}
+
+func (e employee) LeavesRemaining() {  
+    fmt.Printf("%s %s has %d leaves remaining\n", e.firstName, e.lastName, (e.totalLeaves - e.leavesTaken))
+}
+```
+
+```go
+package main  
+
+import "oop/employee"
+
+func main() {  
+    e := employee.New("Sam", "Adolf", 30, 20)
+    e.LeavesRemaining()
+}
+```
+
+This is how structs can effectively be used instead of classes and methods of signature `New(parameters)` can be used in the place of constructors.
 
 ### Reference
 
