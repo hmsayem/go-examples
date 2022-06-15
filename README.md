@@ -887,6 +887,7 @@ func getResult(done chan bool) {
 	}
 	done <- true
 }
+
 func main() {
 	startTime := time.Now()
 	go generateJobs(100)
@@ -895,6 +896,132 @@ func main() {
 	go getResult(done)
 	<-done
 	fmt.Println("Total time taken: ", time.Now().Sub(startTime).Seconds(), "seconds")
+}
+```
+
+#### Select
+
+The select statement is used to choose from multiple send/receive channel operations. The select statement blocks until one of the send/receive operations is ready. If multiple operations are ready, one of them is chosen at random. This way we can send the same request to multiple servers and return the quickest response to the user.
+
+```go
+package main
+
+import (  
+    "fmt"
+    "time"
+)
+
+func server1(ch chan string) {  
+    time.Sleep(6 * time.Second)
+    ch <- "from server1"
+}
+func server2(ch chan string) {  
+    time.Sleep(3 * time.Second)
+    ch <- "from server2"
+
+}
+func main() {  
+    output1 := make(chan string)
+    output2 := make(chan string)
+    go server1(output1)
+    go server2(output2)
+    select {
+    case s1 := <-output1:
+        fmt.Println(s1)
+    case s2 := <-output2:
+        fmt.Println(s2)
+    }
+}
+```
+
+The default case in a select statement is executed when none of the other cases is ready. This is generally used to prevent the select statement from blocking.
+
+```go
+package main
+
+import (  
+    "fmt"
+    "time"
+)
+
+func process(ch chan string) {  
+    time.Sleep(10500 * time.Millisecond)
+    ch <- "process successful"
+}
+
+func main() {  
+    ch := make(chan string)
+    go process(ch)
+    for {
+        time.Sleep(1000 * time.Millisecond)
+        select {
+        case v := <-ch:
+            fmt.Println("received value: ", v)
+            return
+        default:
+            fmt.Println("no value received")
+        }
+    }
+
+}
+```
+#### Solving the race condition using a mutex
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+)
+
+var x = 0
+
+func increment(wg *sync.WaitGroup, m *sync.Mutex) {
+	m.Lock()
+	x = x + 1
+	m.Unlock()
+	wg.Done()
+}
+func main() {
+	var w sync.WaitGroup
+	var m sync.Mutex
+	for i := 0; i < 1000; i++ {
+		w.Add(1)
+		go increment(&w, &m)
+	}
+	w.Wait()
+	fmt.Println("Final value of x", x)
+}
+```
+
+#### Solving the race condition using channel
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+)
+
+var x = 0
+
+func increment(wg *sync.WaitGroup, ch chan bool) {
+	ch <- true
+	x = x + 1
+	<-ch
+	wg.Done()
+}
+func main() {
+	var w sync.WaitGroup
+	ch := make(chan bool, 0)
+	for i := 0; i < 1000; i++ {
+		w.Add(1)
+		go increment(&w, ch)
+	}
+	w.Wait()
+	fmt.Println("final value of x", x)
 }
 ```
 
