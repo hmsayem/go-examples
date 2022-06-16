@@ -1498,6 +1498,102 @@ func main() {
 }
 ```
 
+#### Panic Example
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func fullName(firstName *string, lastName *string) {  
+    if firstName == nil {
+        panic("runtime error: first name cannot be nil")
+    }
+    if lastName == nil {
+        panic("runtime error: last name cannot be nil")
+    }
+    fmt.Printf("%s %s\n", *firstName, *lastName)
+    fmt.Println("returned normally from fullName")
+}
+
+func main() {  
+    firstName := "Elon"
+    fullName(&firstName, nil)
+    fmt.Println("returned normally from main")
+}
+```
+
+Output:
+
+```bash
+panic: runtime error: last name cannot be nil
+
+goroutine 1 [running]:  
+main.fullName(0xc00006af58, 0x0)  
+    /tmp/sandbox210590465/prog.go:12 +0x193
+main.main()  
+    /tmp/sandbox210590465/prog.go:20 +0x4d
+```
+
+#### Defer Calls During a Panic
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func fullName(firstName *string, lastName *string) {  
+    defer fmt.Println("deferred call in fullName")
+    if firstName == nil {
+        panic("runtime error: first name cannot be nil")
+    }
+    if lastName == nil {
+        panic("runtime error: last name cannot be nil")
+    }
+    fmt.Printf("%s %s\n", *firstName, *lastName)
+    fmt.Println("returned normally from fullName")
+}
+
+func main() {  
+    defer fmt.Println("deferred call in main")
+    firstName := "Elon"
+    fullName(&firstName, nil)
+    fmt.Println("returned normally from main")
+}
+```
+
+#### Recovering from a Panic
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func recoverInvalidAccess() {  
+    if r := recover(); r != nil {
+        fmt.Println("Recovered", r)
+    }
+}
+
+func invalidSliceAccess() {  
+    defer recoverInvalidAccess()
+    n := []int{5, 7, 4}
+    fmt.Println(n[4])
+    fmt.Println("normally returned from a")
+}
+
+func main() {  
+    invalidSliceAccess()
+    fmt.Println("normally returned from main")
+}
+```
+
 ### Reference
 
 - [golangbot.com](https://golangbot.com/learn-golang-series/)
