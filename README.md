@@ -826,76 +826,76 @@ func main() {
 package main
 
 import (
-	"fmt"
-	"math/rand"
-	"sync"
-	"time"
+    "fmt"
+    "math/rand"
+    "sync"
+    "time"
 )
 
 type job struct {
-	id           int
-	randomNumber int
+    id           int
+    randomNumber int
 }
 
 type result struct {
-	job
-	sumOfDigits int
+    job
+    sumOfDigits int
 }
 
 var jobs = make(chan job, 10)
 var results = make(chan result, 10)
 
 func SumOfDigits(num int) int {
-	sum := 0
-	for num != 0 {
-		sum += num % 10
-		num /= 10
-	}
-	return sum
+    sum := 0
+    for num != 0 {
+        sum += num % 10
+        num /= 10
+    }
+    return sum
 }
 
 func worker(wg *sync.WaitGroup) {
-	for job := range jobs {
-		output := result{job, SumOfDigits(job.randomNumber)}
-		results <- output
-	}
-	wg.Done()
+    for job := range jobs {
+        output := result{job, SumOfDigits(job.randomNumber)}
+        results <- output
+    }
+    wg.Done()
 }
 
 func createWorkerPool(numOfWorkers int) {
-	wg := sync.WaitGroup{}
-	for i := 1; i <= numOfWorkers; i++ {
-		wg.Add(1)
-		go worker(&wg)
-	}
+    wg := sync.WaitGroup{}
+    for i := 1; i <= numOfWorkers; i++ {
+        wg.Add(1)
+        go worker(&wg)
+    }
 
-	wg.Wait()
-	close(results)
+    wg.Wait()
+    close(results)
 }
 
 func generateJobs(numOfJobs int) {
-	for i := 1; i <= numOfJobs; i++ {
-		newJob := job{i, rand.Intn(1000)}
-		jobs <- newJob
-	}
-	close(jobs)
+    for i := 1; i <= numOfJobs; i++ {
+        newJob := job{i, rand.Intn(1000)}
+        jobs <- newJob
+    }
+    close(jobs)
 }
 
 func getResult(done chan bool) {
-	for result := range results {
-		fmt.Println("Job: ", result.job, "Output: ", result.sumOfDigits)
-	}
-	done <- true
+    for result := range results {
+        fmt.Println("Job: ", result.job, "Output: ", result.sumOfDigits)
+    }
+    done <- true
 }
 
 func main() {
-	startTime := time.Now()
-	go generateJobs(100)
-	go createWorkerPool(5)
-	done := make(chan bool)
-	go getResult(done)
-	<-done
-	fmt.Println("Total time taken: ", time.Now().Sub(startTime).Seconds(), "seconds")
+    startTime := time.Now()
+    go generateJobs(100)
+    go createWorkerPool(5)
+    done := make(chan bool)
+    go getResult(done)
+    <-done
+    fmt.Println("Total time taken: ", time.Now().Sub(startTime).Seconds(), "seconds")
 }
 ```
 
@@ -972,27 +972,27 @@ func main() {
 package main
 
 import (
-	"fmt"
-	"sync"
+    "fmt"
+    "sync"
 )
 
 var x = 0
 
 func increment(wg *sync.WaitGroup, m *sync.Mutex) {
-	m.Lock()
-	x = x + 1
-	m.Unlock()
-	wg.Done()
+    m.Lock()
+    x = x + 1
+    m.Unlock()
+    wg.Done()
 }
 func main() {
-	var w sync.WaitGroup
-	var m sync.Mutex
-	for i := 0; i < 1000; i++ {
-		w.Add(1)
-		go increment(&w, &m)
-	}
-	w.Wait()
-	fmt.Println("Final value of x", x)
+    var w sync.WaitGroup
+    var m sync.Mutex
+    for i := 0; i < 1000; i++ {
+        w.Add(1)
+        go increment(&w, &m)
+    }
+    w.Wait()
+    fmt.Println("Final value of x", x)
 }
 ```
 
@@ -1002,29 +1002,30 @@ func main() {
 package main
 
 import (
-	"fmt"
-	"sync"
+    "fmt"
+    "sync"
 )
 
 var x = 0
 
 func increment(wg *sync.WaitGroup, ch chan bool) {
-	ch <- true
-	x = x + 1
-	<-ch
-	wg.Done()
+    ch <- true
+    x = x + 1
+    <-ch
+    wg.Done()
 }
 func main() {
-	var w sync.WaitGroup
-	ch := make(chan bool, 0)
-	for i := 0; i < 1000; i++ {
-		w.Add(1)
-		go increment(&w, ch)
-	}
-	w.Wait()
-	fmt.Println("final value of x", x)
+    var w sync.WaitGroup
+    ch := make(chan bool, 0)
+    for i := 0; i < 1000; i++ {
+        w.Add(1)
+        go increment(&w, ch)
+    }
+    w.Wait()
+    fmt.Println("final value of x", x)
 }
 ```
+
 #### New() function instead of constructors
 
 If the zero value of a type is not usable, it is the job of the programmer to unexport the type to prevent access from other packages and also to provide a function named `NewT(parameters)` which initializes the type T with the required values. It is a convention in Go to name a function that creates a value of type T to `NewT(parameters)`. This will act as a constructor. If the package defines only one type, then it's a convention in Go to name this function just `New(parameters)` instead of `NewT(parameters)`.
@@ -1065,6 +1066,78 @@ func main() {
 ```
 
 This is how structs can effectively be used instead of classes and methods of signature `New(parameters)` can be used in the place of constructors.
+
+#### Composition by embedding struct and slice of structs
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+type author struct {  
+    firstName string
+    lastName  string
+    bio       string
+}
+
+func (a author) fullName() string {  
+    return fmt.Sprintf("%s %s", a.firstName, a.lastName)
+}
+
+type blogPost struct {  
+    title   string
+    content string
+    author
+}
+
+func (p blogPost) details() {  
+    fmt.Println("Title: ", p.title)
+    fmt.Println("Content: ", p.content)
+    fmt.Println("Author: ", p.fullName())
+    fmt.Println("Bio: ", p.bio)
+}
+
+type website struct {  
+    blogPosts []blogPost
+}
+
+func (w website) contents() {  
+    fmt.Println("Contents of Website\n")
+    for _, v := range w.blogPosts {
+        v.details()
+        fmt.Println()
+    }
+}
+
+func main() {  
+    author1 := author{
+        "Naveen",
+        "Ramanathan",
+        "Golang Enthusiast",
+    }
+    blogPost1 := blogPost{
+        "Inheritance in Go",
+        "Go supports composition instead of inheritance",
+        author1,
+    }
+    blogPost2 := blogPost{
+        "Struct instead of Classes in Go",
+        "Go does not support classes but methods can be added to structs",
+        author1,
+    }
+    blogPost3 := blogPost{
+        "Concurrency",
+        "Go is a concurrent language and not a parallel one",
+        author1,
+    }
+    w := website{
+        blogPosts: []blogPost{blogPost1, blogPost2, blogPost3},
+    }
+    w.contents()
+}
+```
 
 ### Reference
 
