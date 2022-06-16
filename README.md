@@ -1139,6 +1139,365 @@ func main() {
 }
 ```
 
+#### Argument evaluation in deferred function
+
+The arguments of a deferred function are evaluated when the defer statement is executed and not when the actual function call is done.
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func printA(a int) {  
+    fmt.Println("value of a in deferred function", a)
+}
+func main() {  
+    a := 5
+    defer printA(a)
+    a = 10
+    fmt.Println("value of a before deferred function call", a)
+
+}
+```
+
+#### Stack of defers
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func main() {  
+    name := "Naveen"
+    fmt.Printf("Original String: %s\n", string(name))
+    fmt.Printf("Reversed String: ")
+    for _, v := range []rune(name) {
+        defer fmt.Printf("%c", v)
+    }
+}
+```
+
+#### Practical use of defer
+
+```go
+package main
+
+import (  
+    "fmt"
+    "sync"
+)
+
+type rect struct {  
+    length int
+    width  int
+}
+
+func (r rect) area(wg *sync.WaitGroup) {  
+    defer wg.Done()
+    if r.length < 0 {
+        fmt.Printf("rect %v's length should be greater than zero\n", r)
+        return
+    }
+    if r.width < 0 {
+        fmt.Printf("rect %v's width should be greater than zero\n", r)
+        return
+    }
+    area := r.length * r.width
+    fmt.Printf("rect %v's area %d\n", r, area)
+}
+
+func main() {  
+    var wg sync.WaitGroup
+    r1 := rect{-67, 89}
+    r2 := rect{5, -67}
+    r3 := rect{8, 9}
+    rects := []rect{r1, r2, r3}
+    for _, v := range rects {
+        wg.Add(1)
+        go v.area(&wg)
+    }
+    wg.Wait()
+    fmt.Println("All go routines finished executing")
+}
+```
+
+#### Error type representation
+
+```go
+type error interface {  
+    Error() string
+}
+```
+
+It contains a single method with signature `Error() string`. Any type which implements this interface can be used as an error. This method provides the description of the error. `fmt.Println` function calls the `Error() string` method internally to get the description of the error.
+
+#### Asserting the underlying struct type and getting more information from the struct fields
+
+```go
+type PathError struct {  
+    Op   string
+    Path string
+    Err  error
+}
+
+func (e *PathError) Error() string { 
+    return e.Op + " " + e.Path + ": " + e.Err.Error() 
+}  
+```
+
+```go
+package main
+
+import (  
+    "fmt"
+    "os"
+)
+
+func main() {  
+    f, err := os.Open("test.txt")
+    if err != nil {
+        if pErr, ok := err.(*os.PathError); ok {
+            fmt.Println("Failed to open file at path", pErr.Path)
+            return
+        }
+        fmt.Println("Generic error", err)
+        return
+    }
+    fmt.Println(f.Name(), "opened successfully")
+}
+```
+
+#### Asserting the underlying struct type and getting more information using methods
+
+```go
+type DNSError struct {  
+    ...
+}
+
+func (e *DNSError) Error() string {  
+    ...
+}
+func (e *DNSError) Timeout() bool {  
+    ... 
+}
+func (e *DNSError) Temporary() bool {  
+    ... 
+}
+```
+
+```go
+package main
+
+import (  
+    "fmt"
+    "net"
+)
+
+func main() {  
+    addr, err := net.LookupHost("golangbot123.com")
+    if err != nil {
+        if dnsErr, ok := err.(*net.DNSError); ok {
+            if dnsErr.Timeout() {
+                fmt.Println("operation timed out")
+                return
+            }
+            if dnsErr.Temporary() {
+                fmt.Println("temporary error")
+                return
+            }
+            fmt.Println("Generic DNS error", err)
+            return
+        }
+        fmt.Println("Generic error", err)
+        return
+    }
+    fmt.Println(addr)
+}
+```
+
+#### Creating custom errors using the New() function
+
+```go
+package errors
+
+// New returns an error that formats as the given text.
+func New(text string) error {
+    return &errorString{text}
+}
+
+// errorString is a trivial implementation of error.
+type errorString struct {
+    s string
+}
+
+func (e *errorString) Error() string {
+    return e.s
+}
+```
+
+```go
+package main
+
+import (  
+    "errors"
+    "fmt"
+    "math"
+)
+
+func circleArea(radius float64) (float64, error) {  
+    if radius < 0 {
+        return 0, errors.New("Area calculation failed, radius is less than zero")
+    }
+    return math.Pi * radius * radius, nil
+}
+
+func main() {  
+    radius := -20.0
+    area, err := circleArea(radius)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    fmt.Printf("Area of circle %0.2f", area)
+}
+```
+
+#### Adding more information to the error using Errorf()
+
+```go
+package main
+
+import (  
+    "fmt"
+    "math"
+)
+
+func circleArea(radius float64) (float64, error) {  
+    if radius < 0 {
+        return 0, fmt.Errorf("Area calculation failed, radius %0.2f is less than zero", radius)
+    }
+    return math.Pi * radius * radius, nil
+}
+
+func main() {  
+    radius := -20.0
+    area, err := circleArea(radius)
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    fmt.Printf("Area of circle %0.2f", area)
+}
+```
+
+#### Providing more information about the custom error using struct type and fields
+
+```go
+package main
+
+import (  
+    "fmt"
+    "math"
+)
+
+type areaError struct {  
+    err    string
+    radius float64
+}
+
+func (e *areaError) Error() string {  
+    return fmt.Sprintf("radius %0.2f: %s", e.radius, e.err)
+}
+
+func circleArea(radius float64) (float64, error) {  
+    if radius < 0 {
+        return 0, &areaError{"radius is negative", radius}
+    }
+    return math.Pi * radius * radius, nil
+}
+
+func main() {  
+    radius := -20.0
+    area, err := circleArea(radius)
+    if err != nil {
+        if err, ok := err.(*areaError); ok {
+            fmt.Printf("Radius %0.2f is less than zero", err.radius)
+            return
+        }
+        fmt.Println(err)
+        return
+    }
+    fmt.Printf("Area of rectangle1 %0.2f", area)
+}
+```
+
+#### Providing more information about the custom error using methods on struct types
+
+```go
+package main
+
+import "fmt"
+
+type areaError struct {  
+    err    string  //error description
+    length float64 //length which caused the error
+    width  float64 //width which caused the error
+}
+
+func (e *areaError) Error() string {  
+    return e.err
+}
+
+func (e *areaError) lengthNegative() bool {  
+    return e.length < 0
+}
+
+func (e *areaError) widthNegative() bool {  
+    return e.width < 0
+}
+
+func rectArea(length, width float64) (float64, error) {  
+    err := ""
+    if length < 0 {
+        err += "length is less than zero"
+    }
+    if width < 0 {
+        if err == "" {
+            err = "width is less than zero"
+        } else {
+            err += ", width is less than zero"
+        }
+    }
+    if err != "" {
+        return 0, &areaError{err, length, width}
+    }
+    return length * width, nil
+}
+
+func main() {  
+    length, width := -5.0, -9.0
+    area, err := rectArea(length, width)
+    if err != nil {
+        if err, ok := err.(*areaError); ok {
+            if err.lengthNegative() {
+                fmt.Printf("error: length %0.2f is less than zero\n", err.length)
+
+            }
+            if err.widthNegative() {
+                fmt.Printf("error: width %0.2f is less than zero\n", err.width)
+
+            }
+            return
+        }
+    }
+    fmt.Println("area of rect", area)
+}
+```
+
 ### Reference
 
 - [golangbot.com](https://golangbot.com/learn-golang-series/)
