@@ -1594,6 +1594,171 @@ func main() {
 }
 ```
 
+#### User defined function types
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+type add func(a int, b int) int
+
+func main() {  
+    var a add = func(a int, b int) int {
+        return a + b
+    }
+    s := a(5, 6)
+    fmt.Println("Sum", s)
+}
+```
+
+#### Passing functions as arguments to other functions
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func simple(a func(a, b int) int) {  
+    fmt.Println(a(60, 7))
+}
+
+func main() {  
+    f := func(a, b int) int {
+        return a + b
+    }
+    simple(f)
+}
+```
+
+#### Returning functions from other functions
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func simple() func(a, b int) int {  
+    f := func(a, b int) int {
+        return a + b
+    }
+    return f
+}
+
+func main() {  
+    s := simple()
+    fmt.Println(s(60, 7))
+}
+```
+
+#### Closures
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func appendStr() func(string) string {  
+    t := "Hello"
+    c := func(b string) string {
+        t = t + " " + b
+        return t
+    }
+    return c
+}
+
+func main() {  
+    a := appendStr()
+    b := appendStr()
+    fmt.Println(a("World"))
+    fmt.Println(b("Everyone"))
+    fmt.Println(a("Gopher"))
+}
+```
+
+#### Practical use of first class functions
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+type student struct {  
+    firstName string
+    lastName  string
+    grade     string
+    country   string
+}
+
+func filter(s []student, f func(student) bool) []student {  
+    var r []student
+    for _, v := range s {
+        if f(v) == true {
+            r = append(r, v)
+        }
+    }
+    return r
+}
+
+func main() {  
+    s1 := student{
+        firstName: "Naveen",
+        lastName:  "Ramanathan",
+        grade:     "A",
+        country:   "India",
+    }
+    s2 := student{
+        firstName: "Samuel",
+        lastName:  "Johnson",
+        grade:     "B",
+        country:   "USA",
+    }
+    s := []student{s1, s2}
+    f := filter(s, func(s student) bool {
+        if s.grade == "B" {
+            return true
+        }
+        return false
+    })
+    fmt.Println(f)
+}
+```
+
+```go
+package main
+
+import (  
+    "fmt"
+)
+
+func iMap(s []int, f func(int) int) []int {  
+    var r []int
+    for _, v := range s {
+        r = append(r, f(v))
+    }
+    return r
+}
+func main() {  
+    a := []int{5, 6, 7, 8, 9}
+    r := iMap(a, func(n int) int {
+        return n * 5
+    })
+    fmt.Println(r)
+}
+```
+
+This type of functions that operate on every element of a collection are called map functions.
+
 ### Reference
 
 - [golangbot.com](https://golangbot.com/learn-golang-series/)
