@@ -1759,6 +1759,123 @@ func main() {
 
 This type of functions that operate on every element of a collection are called map functions.
 
+#### Reflection
+
+```go
+package main
+
+import (
+    "fmt"
+    "reflect"
+)
+
+type order struct {
+    a int
+    b string
+}
+
+func runReflect(q interface{}) {
+    t := reflect.TypeOf(q)
+    fmt.Println("Type: ", t)
+
+    v := reflect.ValueOf(q)
+    fmt.Printf("Type: %T, Value: %v\n", v, v)
+
+    k := v.Kind()
+    fmt.Println("Kind: ", k)
+
+    n := v.NumField()
+    fmt.Println("Number Of Fields: ", n)
+
+    a, b := v.Field(0), v.Field(1)
+    i := a.Int()
+    s := b.String()
+    fmt.Printf("Type of a: %T, Type of b: %T\n", i, s)
+}
+func main() {
+    o := order{
+        a: 123,
+        b: "abc",
+    }
+    runReflect(o)
+}
+
+```
+
+```go
+package main
+
+import (  
+    "fmt"
+    "reflect"
+)
+
+type order struct {  
+    ordId      int
+    customerId int
+}
+
+type employee struct {  
+    name    string
+    id      int
+    address string
+    salary  int
+    country string
+}
+
+func createQuery(q interface{}) {  
+    if reflect.ValueOf(q).Kind() == reflect.Struct {
+        t := reflect.TypeOf(q).Name()
+        query := fmt.Sprintf("insert into %s values(", t)
+        v := reflect.ValueOf(q)
+        for i := 0; i < v.NumField(); i++ {
+            switch v.Field(i).Kind() {
+            case reflect.Int:
+                if i == 0 {
+                    query = fmt.Sprintf("%s%d", query, v.Field(i).Int())
+                } else {
+                    query = fmt.Sprintf("%s, %d", query, v.Field(i).Int())
+                }
+            case reflect.String:
+                if i == 0 {
+                    query = fmt.Sprintf("%s\"%s\"", query, v.Field(i).String())
+                } else {
+                    query = fmt.Sprintf("%s, \"%s\"", query, v.Field(i).String())
+                }
+            default:
+                fmt.Println("Unsupported type")
+                return
+            }
+        }
+        query = fmt.Sprintf("%s)", query)
+        fmt.Println(query)
+        return
+
+    }
+    fmt.Println("unsupported type")
+}
+
+func main() {  
+    o := order{
+        ordId:      456,
+        customerId: 56,
+    }
+    createQuery(o)
+
+    e := employee{
+        name:    "Naveen",
+        id:      565,
+        address: "Coimbatore",
+        salary:  90000,
+        country: "India",
+    }
+    createQuery(e)
+    i := 90
+    createQuery(i)
+
+}
+```
+
 ### Reference
 
 - [golangbot.com](https://golangbot.com/learn-golang-series/)
