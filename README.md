@@ -1,5 +1,7 @@
 
-## Go Examples
+# Go Examples
+
+### Miscellaneous
 
 #### Label to break outer loop
 
@@ -48,7 +50,7 @@ func main() {
 
 #### Memory optimisation with garbage collection
 
-Slices hold a reference to the underlying array. As long as the slice is in memory, the array cannot be garbage collected. One way to solve this problem is to use the copy function func copy(dst, src []T) int to make a copy of that slice. This way we can use the new slice and the original array can be garbage collected.
+Slices hold a reference to the underlying array. As long as the slice is in memory, the array cannot be garbage collected. One way to solve this problem is to use the copy function `func copy(dst, src []T) int` to make a copy of that slice. This way we can use the new slice and the original array can be garbage collected.
 
 ```go
 package main
@@ -594,7 +596,6 @@ func main() {
     }
 }
 ```
-
 
 #### Example of channels
 
@@ -1876,6 +1877,60 @@ func main() {
 }
 ```
 
+### Best Practices
+
+#### Accept interfaces, return structs
+
+```go
+package db
+type Store struct {
+   db *sql.DB
+}
+
+func NewDB() *Store { ... } //func to initialise DB
+func (s *Store) Insert(item interface{}) error { ... } //insert item
+func (s *Store) Get(id int) error { ... } //get item by id
+```
+
+```go
+package user
+
+type UserStore interface {
+   Insert(item interface{}) error
+   Get(id int) error
+}
+
+type UserService struct {
+   store UserStore
+}
+
+// Accepting interface here!
+func NewUserService(s UserStore) *UserService {
+   return &UserService{
+      store: s,
+   }
+}
+
+func (u *UserService) CreateUser() { ... }
+func (u *UserService) RetrieveUser(id int) User { ... }
+```
+
+In the db package, `db.go` provides some persistent storage functionality. In the user package, `user.go` contains some business logic we want to handle with the user. Here, the user package is the consumer, using the stateful services provided by the db package.
+
+Accepting Interfaces is all about letting the consumer define what they want in an interface. The consumer should not be worried about what the dependency is, just that it can perform the tasks the consumer needs. This retains the flexibility of using any storage as long as it satisfies the consumer defined interface. Producers should provide concrete types to consumers instead of an interface. Because the consumer may need to call one or more methods that are specific to that concrete type. If the producer returns an interface, the client code would have to manually cast it to the concrete type so that it can invoke the specific methods; this would defeat the purpose of returning an interface in the first place.
+
+Testing would also be made simpler as we can easily pass in an in-memory mock without having to spin up an actual db instance which could be expensive just for the sake of unit testing. We can just have a mock in-memory store with the appropriate data needed for our test cases.
+
+```go
+func TestCreateUser(t *testing.T) {
+   s := new(inMemStore) //use some in-memory store...
+   service := NewUserService(s)
+   
+   //... test the CreateUser() function
+}
+```
+
 ### Reference
 
 - [golangbot.com](https://golangbot.com/learn-golang-series/)
+- [bryanftan.medium.com](https://bryanftan.medium.com/accept-interfaces-return-structs-in-go-d4cab29a301b)
