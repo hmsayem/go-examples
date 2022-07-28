@@ -1,5 +1,9 @@
 
-# Go Examples
+<p align="center">
+  <img  alt="Go Microservices" height="150px" width="100px" src="https://github.com/hmsayem/go-examples/blob/master/gopher.png">
+</p>
+
+<h1 align="center" > Go Examples </h1>
 
 ### Miscellaneous
 
@@ -60,8 +64,8 @@ import (
 )
 
 func countries() []string {  
-    countries := []string{"USA", "Singapore", "Germany", "India", "Australia"}
-    neededCountries := countries[:3]
+    countryList := []string{"USA", "Singapore", "Germany", "India", "Australia"}
+    neededCountries := countryList[:3]
     countriesCpy := make([]string, len(neededCountries))
     copy(countriesCpy, neededCountries) //copies neededCountries to countriesCpy
     return countriesCpy
